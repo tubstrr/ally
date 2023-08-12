@@ -4,5 +4,12 @@
       "source": "/ally-admin/:path*",
       "destination": "api/ally-admin"
     }
-  ]
+  ],
+  "functions": {
+    "api/ally-admin.go": {
+      "memory": 3008,
+      "maxDuration": 3,
+      "includeFiles": "api/ally-admin"
+    }
+  }
 }
