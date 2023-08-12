@@ -1,28 +1,28 @@
-// package main
-package handler
- 
+package main
+
 import (
-  "fmt"
-  "net/http"
+	"fmt"
+	"net/http"
 )
- 
+
 func Handler(w http.ResponseWriter, r *http.Request) {
-  fmt.Fprintf(w, "<h1>Hello from Go!</h1>")
+	fmt.Fprintf(w, "<h1>Hello from Go!</h1>")
+}
+
+func main() {
+	// Call the handler function in response to requests to the / path.
+	http.HandleFunc("*", Handler)
 }
 
 
+// Vercel exmaple.
+// package handler
+ 
 // import (
-//     "fmt"
-//     "log"
-//     "net/http"
+//   "fmt"
+//   "net/http"
 // )
-
-// func main() {
-//     static := http.FileServer(http.Dir("./static"))
-//     http.Handle("/", static)
-
-//     fmt.Printf("Starting server at port 443\n")
-//     if err := http.ListenAndServe(":443", nil); err != nil {
-//         log.Fatal(err)
-//     }
+ 
+// func Handler(w http.ResponseWriter, r *http.Request) {
+//   fmt.Fprintf(w, "<h1>Hello from Go!</h1>")
 // }
