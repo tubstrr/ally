@@ -53,6 +53,6 @@ func AllyAdmin(w http.ResponseWriter, r *http.Request) {
   //  }
 
    //Get all env variables
-  // fmt.Println(os.Environ())
+  fmt.Fprintf(w, os.Environ())
   
 }
