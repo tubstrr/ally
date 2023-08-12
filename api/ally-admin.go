@@ -28,7 +28,9 @@ func AllyAdmin(w http.ResponseWriter, r *http.Request) {
   }
   // fmt.Println(file) // print the content as 'bytes'
   str := string(file) // convert content to a 'string'
+  fmt.Fprintf(w, filepath) // write data to response
   fmt.Fprintf(w, str) // write data to response
+  
   // fmt.Println(str) // print the content as a 'string'
 
   // // Directory output helper
