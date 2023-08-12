@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/ally-admin/:path*",
+      "destination": "api/ally-admin"
+    }
+  ]
+}
