@@ -30,5 +30,6 @@ func HtmlRender(w http.ResponseWriter, r *http.Request, template string) {
 	// Write the template to the response
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Header().Set("Cache-Control", "public, s-maxage=86400")
 	fmt.Fprintf(w, string(file))
 }
