@@ -3,20 +3,32 @@ package render
 import (
 		"fmt"
 		"net/http"
-		"os"
+		"embed"
 		"github.com/tubstrr/ally/network"
 )
 
-func StaticRender(w http.ResponseWriter, r *http.Request, template string) {
-	file, err := os.ReadFile(template) // just pass the file name
-  if err != nil {
-		fmt.Print(err)
+var (
+	//go:embed templates
+	templates embed.FS
+)
+
+func HtmlRender(w http.ResponseWriter, r *http.Request, template string) {
+	// Check if the template exists
+	if (template == "") {
 		network.FourOhFour(w, r)
 		return
-  }
+	}
 
+	// Get the template
+	file, err := templates.ReadFile("templates" + template)
+	if (err != nil) {
+		fmt.Println(err)
+		network.FourOhFour(w, r)
+		return
+	}
+
+	// Write the template to the response
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-  html := string(file) // convert content to a 'string'
-  fmt.Fprintf(w, html) // write data to response
+	fmt.Fprintf(w, string(file))
 }

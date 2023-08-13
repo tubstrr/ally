@@ -38,9 +38,8 @@ func Serve(port string) {
 	http.HandleFunc("/", Ally)
 	http.ListenAndServe(":" + port, nil)
 }
-
 func Admin(w http.ResponseWriter, r *http.Request) {
-	render.StaticRender(w, r, "./templates/admin/index.html")
+	render.HtmlRender(w, r, "/admin/index.html")
 }
 
 func Ally(w http.ResponseWriter, r *http.Request) {
@@ -54,5 +53,5 @@ func Ally(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	render.StaticRender(w, r, "./templates/front-end/index.html")
+	render.HtmlRender(w, r, "/front-end/index.html")
 }
