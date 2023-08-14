@@ -1,12 +1,13 @@
 package ally
 
 import (
-		"fmt"
-		"net/http"
-		"strings"
-		"github.com/tubstrr/ally/environment"
-		"github.com/tubstrr/ally/render"
-		"github.com/tubstrr/ally/network"
+	"fmt"
+	"net/http"
+	"strings"
+
+	"github.com/tubstrr/ally/environment"
+	"github.com/tubstrr/ally/network"
+	"github.com/tubstrr/ally/render"
 )
 
 func Server() {
@@ -15,16 +16,18 @@ func Server() {
 
 	// Get the environment environment variable
 	env := environment.Get_environment_variable("ALLY_ENVIRONMENT", "production")
-
+	
 	// Start the server	
 	fmt.Println("Starting Ally server")
 	if (env == "development") {
+		port := environment.Get_environment_variable("ALLY_SERVER_PORT", "3000")
 		fmt.Println("Running in development mode")
-		Serve("3000")
+		Serve(port)
 		
-	} else if (env == "production") {
+		} else if (env == "production") {
+		port := environment.Get_environment_variable("ALLY_SERVER_PORT", "8080")
 		fmt.Println("Running in production mode")
-		Serve("443")
+		Serve(port)
 	} else {
 		fmt.Println("Running in unknown mode")
 		fmt.Println("Please set the environment variable ALLY_ENVIRONMENT to either 'development' or 'production'")

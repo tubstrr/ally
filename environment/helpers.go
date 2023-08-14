@@ -1,15 +1,15 @@
 package environment
 
 import (
-    "fmt"
-    "os"
-    "strings"
+	"fmt"
+	"os"
+	"strings"
 )
 
 func Check_environment() {
 	fmt.Println("Checking environment")
 	// Set up checks
-	keys_needed := [1]string {"ALLY_ENVIRONMENT"}
+	keys_needed := [2]string {"ALLY_ENVIRONMENT", "ALLY_SERVER_PORT"}
 	keys_not_set := []string {}
 
 	// Run the check
@@ -37,7 +37,7 @@ func Check_environment() {
 	return
 }
 
-func Loop_through_environment_variables(keys_needed [1]string, keys_not_set []string) []string {
+func Loop_through_environment_variables(keys_needed [2]string, keys_not_set []string) []string {
 	// Loop through the keys needed and check if they are set
 	for _, key := range keys_needed {
 		value := Get_environment_variable(key, "")
