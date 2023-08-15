@@ -1,10 +1,11 @@
 package render
 
 import (
-		"fmt"
-		"net/http"
-		"embed"
-		"github.com/tubstrr/ally/network"
+	"embed"
+	"fmt"
+	"net/http"
+
+	"github.com/tubstrr/ally/network"
 )
 
 var (
