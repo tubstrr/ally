@@ -1,4 +1,4 @@
-package ally_theme
+package main
 
 import (
 	"embed"
