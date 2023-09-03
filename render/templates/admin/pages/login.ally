@@ -1,0 +1,6 @@
+<h1>Login to Ally</h1>
+<form action="/ally-admin/forms/auth">
+  <input type="text" name="username" placeholder="Username" />
+  <input type="password" name="password" placeholder="Password" />
+  <input type="submit" value="Login" />
+</form>

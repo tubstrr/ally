@@ -17,14 +17,14 @@ func Check_database() {
 	fmt.Println("Checking database")
 
 	// Open a connection to the database
-	db = Open_connection()
+	db = OpenConnection()
 
 	tables_needed := []string{
 		"ally_users", 
 		"ally_user_roles",
 		"ally_user_sessions",
 	}
-	check_query := Make_check_query(tables_needed)
+	check_query := MakeCheckQuery(tables_needed)
 
 	// Check if the database exists with the tables needed
 	check, e := db.Query(check_query)
@@ -41,16 +41,16 @@ func Check_database() {
 			fmt.Println("Database has all tables needed")
 		} else {
 			fmt.Println("Database does not have all tables needed")
-			Create_database_tables(tables_needed)
+			CreateDatabaseTables(tables_needed)
 		}
 	}
 
 	// Close the connection
-	defer Close_connection(db)	
+	defer CloseConnection(db)	
 }
 
-func Open_connection() *sql.DB {
-	connection_string := Make_connection_string()
+func OpenConnection() *sql.DB {
+	connection_string := MakeConnectionString()
 	db, err = sql.Open("postgres", connection_string)
 
 	if err != nil { panic(err) }
@@ -60,13 +60,13 @@ func Open_connection() *sql.DB {
 	return db
 }
 
-func Close_connection(db *sql.DB) {
+func CloseConnection(db *sql.DB) {
 	db.Close()
 	fmt.Println("Database connection closed")
 }
 
 // String functions
-func Make_connection_string() string {
+func MakeConnectionString() string {
 	// Set up environment variables
 	host := environment.Get_environment_variable("ALLY_DB_HOST", "localhost")
 	port := environment.Get_environment_variable("ALLY_DB_PORT", "5432")
@@ -75,11 +75,14 @@ func Make_connection_string() string {
 	password := environment.Get_environment_variable("ALLY_DB_PASSWORD", "ally")
 
 	// Run the check
-	connection_string := "postgres://" + user + ":" + password + "@" + host + ":" + port + "/" + db_name + "?sslmode=disable"
+	if (environment.Get_environment_variable("ALLY_ENVIRONMENT", "development") == "development") {
+		db_name = db_name + "?sslmode=disable"
+	}
+	connection_string := "postgres://" + user + ":" + password + "@" + host + ":" + port + "/" + db_name
 	return connection_string
 }
 
-func Make_check_query(tables []string) string {
+func MakeCheckQuery(tables []string) string {
 	check_string := "SELECT EXISTS ("
 	for i, table := range tables {
 		if (i > 0) { check_string += " INTERSECT " }
@@ -91,7 +94,7 @@ func Make_check_query(tables []string) string {
 }
 
 // Helper functions
-func Create_database_tables(tables []string) {
+func CreateDatabaseTables(tables []string) {
 	fmt.Println("Creating database tables")
 	// Define the tables schema
 	tables_schema := map[string]string {
@@ -140,14 +143,14 @@ func Create_database_tables(tables []string) {
 	}
 }
 
-func Insert_row(Table string, Columns string, Values string) {
+func InsertRow(Table string, Columns string, Values string) {
 	// Insert a row into the database
 	fmt.Println("Inserting row into " + Table)
 	_, e := db.Exec("insert into " + Table + " (" + Columns + ") values(" + Values + ")")
 	errors.CheckError(e)
 }
 
-func Delete_row(Table string, Columns string, Values string) {
+func DeleteRow(Table string, Columns string, Values string) {
 	// Delete a row from the database
 	fmt.Println("Deleting row from " + Table)
 	_, e := db.Exec("DELETE FROM " + Table + " WHERE " + Columns + " = " + Values)

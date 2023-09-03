@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/tubstrr/ally/database/users"
 	"github.com/tubstrr/ally/network"
 )
 
@@ -52,7 +53,7 @@ func DynamicRender(w http.ResponseWriter, r *http.Request, template string) {
 	}
 
 	// Parse the template
-	parsed_template := Parse(string(file))
+	parsed_template := Parse(w, r, string(file))
 
 
 	// Write the template to the response
@@ -62,25 +63,44 @@ func DynamicRender(w http.ResponseWriter, r *http.Request, template string) {
 	fmt.Fprint(w, parsed_template)
 }
 
-func Parse(file string) string {
+func Parse(w http.ResponseWriter, r *http.Request, file string) string {
 	// VERY VERY Ruff first draft of the parser
-	separation := strings.Split(file, "{{ --- }}")
-	head := separation[0]
-	content := separation[1]
+	// Get the template
+	root, err := templates.ReadFile("templates/admin/root.ally")
+	if (err != nil) {
+		fmt.Println(err)
+	}
 
-	// Parse the head
-	key := ""
-	value := ""
-	for _, line := range strings.Split(head, "\n") {
-		if (line == "") {
-			continue
-		}
-		if (strings.Contains(line, ":")) {
-			key = strings.Split(line, ":")[0]
-			value = strings.Split(line, ":")[1]
-			content = strings.ReplaceAll(content, "{{ " + key + " }}", value)
+	// Split the file into the head and the content
+	content := file
+	if (strings.Contains(file, "{{ --- }}")) {
+		separation := strings.Split(file, "{{ --- }}")
+		head := separation[0]
+		content := separation[1]
+	
+		// Parse the head
+		key := ""
+		value := ""
+		for _, line := range strings.Split(head, "\n") {
+			if (line == "") {
+				continue
+			}
+			if (strings.Contains(line, ":")) {
+				key = strings.Split(line, ":")[0]
+				value = strings.Split(line, ":")[1]
+				content = strings.ReplaceAll(content, "{{ " + key + " }}", value)
+			}
 		}
 	}
-	
+
+	// Inject the content into the root
+	content = strings.ReplaceAll(string(root), "{{ ALLY_PAGE }}", content)
+
+	if (network.IsUserLoggedIn(w, r)) {
+		userID := network.GetUserID(w, r)
+		user := users.GetUserByID(userID)
+		content = strings.ReplaceAll(content, "{{ ALLY_USERNAME }}", user.Username)
+	} 
+
 	return content
 }

@@ -1,0 +1,24 @@
+<h1>Create your first account</h1>
+<div id="error-message"></div>
+<form action="/ally-admin/forms/create-account">
+  <input type="text" name="username" placeholder="Username" />
+  <input type="email" name="email" placeholder="Email" />
+  <input type="password" name="password" placeholder="Password" />
+  <input type="password" name="confirm_password" placeholder="Confirm Password" />
+  <input type="hidden" name="redirect" value="/ally-admin/create-account" />
+  <input type="submit" value="Login" />
+</form>
+
+<script>
+  const {search} = window.location;
+  if (search == "?error=passwords_do_not_match") {
+    const {p, ul} = van.tags
+    
+    const Error = () => p(
+      "Your passwords don't match.  Please try again."
+    )
+    
+    const errorMessage = document.getElementById("error-message");
+    errorMessage.appendChild(Error())
+  }
+</script>

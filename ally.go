@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/tubstrr/ally/database"
+	"github.com/tubstrr/ally/database/users"
 	"github.com/tubstrr/ally/environment"
 	"github.com/tubstrr/ally/network"
 	"github.com/tubstrr/ally/render"
@@ -39,9 +40,17 @@ func Server() {
 
 func Serve(port string) {
 	fmt.Println("Server started on port " + port)
+
+	// Handle all admin routes
 	http.HandleFunc("/ally-admin", Admin)
-	http.HandleFunc("/ally-admin/login", Login)
-	http.HandleFunc("/ally-admin/auth", network.Authorization)
+	http.HandleFunc("/ally-admin/", Admin)
+	// Admin template routes
+	http.HandleFunc("/ally-admin/login", AdminLogin)
+	http.HandleFunc("/ally-admin/create-account", AdminCreateAccount)
+	// Admin form routes
+	http.HandleFunc("/ally-admin/forms/auth", network.Authorization)	
+	http.HandleFunc("/ally-admin/forms/create-account", network.CreateAccount)
+
 	http.HandleFunc("/", Ally)
 	
 	http.ListenAndServe(":" + port, nil)
@@ -62,15 +71,27 @@ func Ally(w http.ResponseWriter, r *http.Request) {
 }
 
 func Admin(w http.ResponseWriter, r *http.Request) {
-	session := network.GetCookie(w, r, "ally-admin-session")
-	fmt.Println(session)
-	if (session == "") {
+	// If user is not logged in, redirect to login page
+	loggedIn := network.IsUserLoggedIn(w,r)
+	if (!loggedIn) {
 		network.Redirect(w, r, "/ally-admin/login")
 		return
 	}
-	render.DynamicRender(w, r, "/admin/index.ally")
+
+	render.DynamicRender(w, r, "/admin/pages/index.ally")
 }
 
-func Login(w http.ResponseWriter, r *http.Request) {
-	render.DynamicRender(w, r, "/admin/login.ally")
+func AdminLogin(w http.ResponseWriter, r *http.Request) {
+	// If user is logged in, redirect to admin
+	network.RedirectIfUserLoggedIn(w, r)
+
+	render.DynamicRender(w, r, "/admin/pages/login.ally")
+}
+
+func AdminCreateAccount(w http.ResponseWriter, r *http.Request) {
+	if (users.IsUserTableEmpty()) {
+		render.DynamicRender(w, r, "/admin/pages/create-account.ally")
+	} else {
+		network.Redirect(w, r, "/ally-admin/login")
+	}
 }
