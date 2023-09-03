@@ -40,11 +40,11 @@ func Server() {
 func Serve(port string) {
 	fmt.Println("Server started on port " + port)
 	http.HandleFunc("/ally-admin", Admin)
+	http.HandleFunc("/ally-admin/login", Login)
+	http.HandleFunc("/ally-admin/auth", network.Authorization)
 	http.HandleFunc("/", Ally)
+	
 	http.ListenAndServe(":" + port, nil)
-}
-func Admin(w http.ResponseWriter, r *http.Request) {
-	render.HtmlRender(w, r, "/admin/index.html")
 }
 
 func Ally(w http.ResponseWriter, r *http.Request) {
@@ -57,6 +57,20 @@ func Ally(w http.ResponseWriter, r *http.Request) {
 		network.FourOhFour(w, r)
 		return
 	}
-
+	
 	render.HtmlRender(w, r, "/front-end/index.html")
+}
+
+func Admin(w http.ResponseWriter, r *http.Request) {
+	session := network.GetCookie(w, r, "ally-admin-session")
+	fmt.Println(session)
+	if (session == "") {
+		network.Redirect(w, r, "/ally-admin/login")
+		return
+	}
+	render.DynamicRender(w, r, "/admin/index.ally")
+}
+
+func Login(w http.ResponseWriter, r *http.Request) {
+	render.DynamicRender(w, r, "/admin/login.ally")
 }

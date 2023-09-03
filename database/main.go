@@ -19,7 +19,11 @@ func Check_database() {
 	// Open a connection to the database
 	db = Open_connection()
 
-	tables_needed := []string{"ally_users", "ally_user_roles"}
+	tables_needed := []string{
+		"ally_users", 
+		"ally_user_roles",
+		"ally_user_sessions",
+	}
 	check_query := Make_check_query(tables_needed)
 
 	// Check if the database exists with the tables needed
@@ -104,12 +108,21 @@ func Create_database_tables(tables []string) {
 			id SERIAL PRIMARY KEY,
 			role VARCHAR(50) UNIQUE NOT NULL
 		`,
+		"ally_user_sessions": `
+			id SERIAL PRIMARY KEY,
+			user_id INT NOT NULL,
+			session_id VARCHAR(50) UNIQUE NOT NULL,
+			created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+		`,
 	}
 	tables_preload := map[string]string {
 		"ally_user_roles": `
-			INSERT INTO ally_user_roles (role) VALUES ('superadmin');
-			INSERT INTO ally_user_roles (role) VALUES ('admin');
-			INSERT INTO ally_user_roles (role) VALUES ('user');
+			INSERT INTO ally_user_roles (role) VALUES ('superadmin') 
+				ON CONFLICT DO NOTHING;
+			INSERT INTO ally_user_roles (role) VALUES ('admin')
+				ON CONFLICT DO NOTHING;
+			INSERT INTO ally_user_roles (role) VALUES ('user')
+				ON CONFLICT DO NOTHING;
 		`,
 	}
 
