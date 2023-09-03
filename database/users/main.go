@@ -94,9 +94,16 @@ func IsValidUsername(username string) bool {
 	errors.CheckError(e)
 
 	var id int
+	var usernameQuery string
+	var passwordQuery string
+	var emailQuery string
+	var role_idQuery int
+	var created_atQuery string
+	var updated_atQuery string
+
 	defer userQuery.Close()
 	for userQuery.Next() {
-		e = userQuery.Scan(&id)
+		e = userQuery.Scan(&id, &usernameQuery, &passwordQuery, &emailQuery, &role_idQuery, &created_atQuery, &updated_atQuery)
 		errors.CheckError(e)
 	}
 
@@ -122,9 +129,16 @@ func IsValidEmail(email string) bool {
 	errors.CheckError(e)
 
 	var id int
+	var usernameQuery string
+	var passwordQuery string
+	var emailQuery string
+	var role_idQuery int
+	var created_atQuery string
+	var updated_atQuery string
+
 	defer userQuery.Close()
 	for userQuery.Next() {
-		e = userQuery.Scan(&id)
+		e = userQuery.Scan(&id, &usernameQuery, &passwordQuery, &emailQuery, &role_idQuery, &created_atQuery, &updated_atQuery)
 		errors.CheckError(e)
 	}
 
@@ -206,6 +220,7 @@ func GetUserByID(id int) User {
 		Email: emailQuery,
 		Role: role_idQuery,
 	}
+
 
 	return user
 }

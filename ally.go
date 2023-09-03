@@ -12,12 +12,14 @@ import (
 	"github.com/tubstrr/ally/render"
 )
 
+var Test = "test"
+
 func Server() {
 	// Check the environment variables
 	environment.Check_environment()
 	
 	// Check the database
-	database.Check_database()
+	database.CheckDatabase()
 		
 	// Get the environment variables for the server
 	env := environment.Get_environment_variable("ALLY_ENVIRONMENT", "production")
@@ -50,6 +52,7 @@ func Serve(port string) {
 	// Admin form routes
 	http.HandleFunc("/ally-admin/forms/auth", network.Authorization)	
 	http.HandleFunc("/ally-admin/forms/create-account", network.CreateAccount)
+	http.HandleFunc("/ally-admin/forms/logout", network.Logout)
 
 	http.HandleFunc("/", Ally)
 	
@@ -78,19 +81,19 @@ func Admin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	render.DynamicRender(w, r, "/admin/pages/index.ally", true)
+	render.DynamicRender(w, r, "/admin/pages/index.ally", false)
 }
 
 func AdminLogin(w http.ResponseWriter, r *http.Request) {
 	// If user is logged in, redirect to admin
 	network.RedirectIfUserLoggedIn(w, r)
 
-	render.DynamicRender(w, r, "/admin/pages/login.ally", true)
+	render.DynamicRender(w, r, "/admin/pages/login.ally", false)
 }
 
 func AdminCreateAccount(w http.ResponseWriter, r *http.Request) {
 	if (users.IsUserTableEmpty()) {
-		render.DynamicRender(w, r, "/admin/pages/create-account.ally", true)
+		render.DynamicRender(w, r, "/admin/pages/create-account.ally", false)
 	} else {
 		network.Redirect(w, r, "/ally-admin/login")
 	}

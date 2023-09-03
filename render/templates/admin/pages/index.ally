@@ -1,1 +1,2 @@
 <h1>Wellcome {{ ALLY_USERNAME }} to Ally</h1>
+<a href="/ally-admin/forms/logout">Logout</a>

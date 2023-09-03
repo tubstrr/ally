@@ -8,7 +8,10 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/google/uuid"
+	"github.com/tubstrr/ally/database/sessions"
 	"github.com/tubstrr/ally/database/users"
+	"github.com/tubstrr/ally/utilities/validation"
 )
 
 type Cookie struct {
@@ -107,6 +110,7 @@ func Authorization(w http.ResponseWriter, r *http.Request) {
 
 	// Get the form data
 	username := r.FormValue("username")
+	username = validation.ConvertUsername(username)
 	password := r.FormValue("password")
 
 	// Check if all the fields are filled out
@@ -135,9 +139,7 @@ func Authorization(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Check if the password is correct
-	fmt.Println(user.Password)
-	fmt.Println("password: ", password)
-	if (user.Password != password) {
+	if (!validation.VerifyPassword(user.Password, password)) {
 		// Redirect with error
 		redirect_url := "/ally-admin/login?error=invalid_password"
 		Redirect(w, r, redirect_url)
@@ -146,12 +148,19 @@ func Authorization(w http.ResponseWriter, r *http.Request) {
 
 	// If we get here, the user is valid, so set the session cookie
 	// Handle form submission here
-	SetCookie(w, r, "ally-admin-session", strconv.Itoa(user.Id))
+	session := uuid.New().String()
+	
+	// Set the cookie
+	sessions.SetSessionToken(user.Id, session)
+
+	SetCookie(w, r, "ally-admin-session", session)
 	Redirect(w, r, "/ally-admin")
 }
 
 func Logout(w http.ResponseWriter, r *http.Request) {
 	// Handle form submission here
+	session := GetCookie(w, r, "ally-admin-session")
+	sessions.DeleteSessionToken(session)
 	DeleteCookie(w, r, "ally-admin-session")
 	Redirect(w, r, "/ally-admin/login")
 }
@@ -165,6 +174,13 @@ func CreateAccount(w http.ResponseWriter, r *http.Request) {
 	password := r.FormValue("password")
 	confirm_password := r.FormValue("confirm_password")
 	redirect := r.FormValue("redirect")
+
+	// Convert role to int
+	role, err := strconv.Atoi(r.FormValue("role"))
+	if (err != nil) {
+		role = 2
+	}
+		
 
 	if (redirect == "") {
 		redirect = "/ally-admin"
@@ -196,14 +212,27 @@ func CreateAccount(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Check for valid email
+	if (!validation.ValidateEmail(email)) {
+		// Redirect with error
+		redirect_url := redirect + "?error=invalid_email"
+		Redirect(w, r, redirect_url)
+	}
+
+	// Convert username
+	username = validation.ConvertUsername(username)
+
+	// Convert password
+	password = validation.ConvertPassword(password)
+
 	// Check if the users table is empty
-	if (!users.IsUserTableEmpty()) {
-		// Redirect to the login page
-		fmt.Println("User table is not empty")
-		fmt.Println("I need to add authorization logic here")
-		Redirect(w, r, "/ally-admin/login")
+	// We know it's safe to create an account if the users table is empty
+	if (users.IsUserTableEmpty()) {
+		role = 1
+		users.CreateUser(username, email, password, role)
+		Redirect(w, r, "/ally-admin/forms/auth?username=" + username + "&password=" + r.FormValue("password"))
 		return
-	} 
+	}
 	
 	// Is the username taken?
 	if (!users.IsValidUsername(username)) {
@@ -221,21 +250,17 @@ func CreateAccount(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Now we know the user is valid, so create the user
-	id := users.CreateUser(username, email, password, 1)
+	// If we get here, the user is valid
+	// But we need to check if the user has permission to create an account
+	user := sessions.GetUserFromSession(GetCookie(w, r, "ally-admin-session"))
 
-	fmt.Println("User created")
-	fmt.Println("User ID: ", id)
-
-	// If user is logged in, redirect them
-	// Else redirect them to the auth form with the current form username and password
-	if (IsUserLoggedIn(w, r)) {
-		Redirect(w, r, "/ally-admin/login")
-		return
+	if (user.Role <= 2 && user.Role != 0) {
+		users.CreateUser(username, email, password, role)
+		Redirect(w, r, redirect + "?success=account_created")
 	} else {
-		Redirect(w, r, "/ally-admin/forms/auth?username=" + username + "&password=" + password)
-		return
+		Redirect(w, r, redirect + "?error=permission_denied")
 	}
+
 }
 
 func RedirectIfUserLoggedIn(w http.ResponseWriter, r *http.Request) {
@@ -252,20 +277,21 @@ func IsUserLoggedIn(w http.ResponseWriter, r *http.Request) bool {
 	// First get the session cookie
 	session := GetCookie(w, r, "ally-admin-session")
 	// Then check if the session cookie is empty
-	fmt.Println(session)
 	if (session == "") {
 		loggedIn = false
 	} else {
-		loggedIn = true
+		// Then check if the session cookie is valid
+		loggedIn = sessions.CheckSessionToken(session)
+		if (!loggedIn) {
+			// If the session cookie is invalid, delete it
+			DeleteCookie(w, r, "ally-admin-session")
+		}
 	}
 	return loggedIn
 }
 
 func GetUserID(w http.ResponseWriter, r *http.Request) int {
 	session := GetCookie(w, r, "ally-admin-session")
-	id, err := strconv.Atoi(session)
-	if (err != nil) {
-		fmt.Println(err)
-	}
+	id := sessions.GetUserIDFromSession(session)
 	return id
 }

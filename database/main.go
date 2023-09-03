@@ -13,7 +13,7 @@ import (
 var db *sql.DB
 var err error
 
-func Check_database() {
+func CheckDatabase() {
 	fmt.Println("Checking database")
 
 	// Open a connection to the database
@@ -56,13 +56,11 @@ func OpenConnection() *sql.DB {
 	if err != nil { panic(err) }
 	if err = db.Ping(); err != nil { panic(err) }
 
-	fmt.Println("Database connection opened")
 	return db
 }
 
 func CloseConnection(db *sql.DB) {
 	db.Close()
-	fmt.Println("Database connection closed")
 }
 
 // String functions
@@ -101,8 +99,8 @@ func CreateDatabaseTables(tables []string) {
 		"ally_users": `
 			id SERIAL PRIMARY KEY,
 			username VARCHAR(50) UNIQUE NOT NULL,
-			password VARCHAR(50) NOT NULL,
-			email VARCHAR(50) UNIQUE NOT NULL,
+			password VARCHAR(100) NOT NULL,
+			email VARCHAR(300) UNIQUE NOT NULL,
 			role_id INT NOT NULL,
 			created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 			updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -115,7 +113,8 @@ func CreateDatabaseTables(tables []string) {
 			id SERIAL PRIMARY KEY,
 			user_id INT NOT NULL,
 			session_id VARCHAR(50) UNIQUE NOT NULL,
-			created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+			created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			CONSTRAINT user_session_unique UNIQUE (user_id) 
 		`,
 	}
 	tables_preload := map[string]string {
