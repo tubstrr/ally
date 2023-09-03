@@ -41,7 +41,7 @@ func HtmlRender(w http.ResponseWriter, r *http.Request, template string) {
 	fmt.Fprint(w, string(file))
 }
 
-func DynamicRender(w http.ResponseWriter, r *http.Request, template string) {
+func DynamicRender(w http.ResponseWriter, r *http.Request, template string, noCache bool) {
 	// Check if the template exists
 	if (template == "") {
 		network.FourOhFour(w, r)
@@ -64,7 +64,7 @@ func DynamicRender(w http.ResponseWriter, r *http.Request, template string) {
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Header().Set("Cache-Control", "public, s-maxage=86400")
-	if (network.IsUserLoggedIn(w, r)) {
+	if (network.IsUserLoggedIn(w, r) || noCache) {
 		w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
 	}
 	w.WriteHeader(http.StatusOK)

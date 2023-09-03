@@ -78,19 +78,19 @@ func Admin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	render.DynamicRender(w, r, "/admin/pages/index.ally")
+	render.DynamicRender(w, r, "/admin/pages/index.ally", true)
 }
 
 func AdminLogin(w http.ResponseWriter, r *http.Request) {
 	// If user is logged in, redirect to admin
 	network.RedirectIfUserLoggedIn(w, r)
 
-	render.DynamicRender(w, r, "/admin/pages/login.ally")
+	render.DynamicRender(w, r, "/admin/pages/login.ally", true)
 }
 
 func AdminCreateAccount(w http.ResponseWriter, r *http.Request) {
 	if (users.IsUserTableEmpty()) {
-		render.DynamicRender(w, r, "/admin/pages/create-account.ally")
+		render.DynamicRender(w, r, "/admin/pages/create-account.ally", true)
 	} else {
 		network.Redirect(w, r, "/ally-admin/login")
 	}

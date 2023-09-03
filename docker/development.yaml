@@ -18,8 +18,8 @@ services:
     depends_on:
       - postgresql
     build:
-      context: ../../
-      dockerfile: example/docker/containers/ally/Dockerfile
+      context: ../
+      dockerfile: docker/containers/ally/Dockerfile
     environment:
       ALLY_ENVIRONMENT: development
       ALLY_SERVER_PORT: 3000
@@ -31,7 +31,7 @@ services:
       - "3000:3000"
       - "8000:8000"
     volumes:
-      - ../../:/ally
+      - ../:/ally
 
 # Volumes
 volumes:

@@ -20,5 +20,5 @@ EXPOSE 3000
 
 # Run
 RUN go install github.com/githubnemo/CompileDaemon@latest
-ENTRYPOINT CompileDaemon --build="go build example/docker/containers/ally/main.go" --command="./main" --directory="./"
+ENTRYPOINT CompileDaemon --build="go build docker/containers/ally/main.go" --command="./main" --directory="./"
 # CMD ["go", "run", "example/docker/containers/ally/main.go"]
