@@ -14,7 +14,10 @@ func MakeClient() *redis.Client {
 	user := environment.Get_environment_variable("ALLY_REDIS_USERNAME", "default")
 	password := environment.Get_environment_variable("ALLY_REDIS_PASSWORD", "")
 
-	redis_url := "redis://" + user + ":" + password + "@" + host + ":" + port + "/" + db_name
+	redis_url := "redis://" + user + ":" + password + "@" + host + ":" + port
+	if (db_name != "") {
+		redis_url += "/" + db_name
+	}
 	opt, err := redis.ParseURL(redis_url)
 	if err != nil {
 		panic(err)
