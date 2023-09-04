@@ -1,6 +1,13 @@
 # Docker Compose version
 version: "3.7"
 services:
+  # Redis
+  redis:
+    image: amd64/redis:alpine
+    expose:
+      - 6379
+    ports:
+      - "6379:6379"
   # postgresql
   postgresql:
     image: postgres:14.1-alpine

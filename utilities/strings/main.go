@@ -4,6 +4,8 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/tubstrr/ally/errors"
 )
 
 
@@ -28,17 +30,12 @@ func AlphaNumeric(input string) string {
 	return alphanumericString
 }
 
-func StringToNumber(input string) interface{} {
+func StringToNumber(input string) int {
 	// Try to convert the string to an integer first
 	if intValue, err := strconv.Atoi(input); err == nil {
 		return intValue
+	} else {
+		errors.CheckError(err)
+		return -1
 	}
-
-	// If it's not an integer, try to convert it to a float
-	if floatValue, err := strconv.ParseFloat(input, 64); err == nil {
-		return floatValue
-	}
-
-	// Return an error if neither conversion succeeds
-	return nil
 }

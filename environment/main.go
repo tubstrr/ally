@@ -9,7 +9,7 @@ import (
 func Check_environment() {
 	fmt.Println("Checking environment")
 	// Set up checks
-	keys_needed := [7]string {
+	keys_needed := []string {
 		"ALLY_ENVIRONMENT", 
 		"ALLY_SERVER_PORT",
 		"ALLY_DB_HOST",
@@ -17,6 +17,10 @@ func Check_environment() {
 		"ALLY_DB_PORT",
 		"ALLY_DB_USER",
 		"ALLY_DB_PASSWORD",
+		"ALLY_REDIS_HOST",
+		"ALLY_REDIS_PORT",
+		"ALLY_REDIS_PASSWORD",
+		"ALLY_REDIS_NAME",
 	}
 	keys_not_set := []string {}
 
@@ -45,7 +49,7 @@ func Check_environment() {
 	return
 }
 
-func Loop_through_environment_variables(keys_needed [7]string, keys_not_set []string) []string {
+func Loop_through_environment_variables(keys_needed []string, keys_not_set []string) []string {
 	// Loop through the keys needed and check if they are set
 	for _, key := range keys_needed {
 		value := Get_environment_variable(key, "")
@@ -78,6 +82,9 @@ func Load_environment_variables() {
 	lines := strings.Split(text, "\n")
 	for _, line := range lines {
 		variable := strings.Split(line, "=")
+		if (len(variable) < 2) {
+			continue
+		}
 		os.Setenv(variable[0], variable[1])
 	}
 }
