@@ -2,9 +2,11 @@ package ally_redis
 
 import (
 	"context"
+	"crypto/tls"
 
 	"github.com/redis/go-redis/v9"
 	"github.com/tubstrr/ally/environment"
+	ally_strings "github.com/tubstrr/ally/utilities/strings"
 )
 
 func MakeClient() *redis.Client {
@@ -13,23 +15,28 @@ func MakeClient() *redis.Client {
 	db_name := environment.Get_environment_variable("ALLY_REDIS_DB_NAME", "")
 	user := environment.Get_environment_variable("ALLY_REDIS_USERNAME", "default")
 	password := environment.Get_environment_variable("ALLY_REDIS_PASSWORD", "")
+	tls_enabled := environment.Get_environment_variable("ALLY_REDIS_TLS", "false")
 
-	redis_url := "redis://" + user + ":" + password + "@" + host + ":" + port
+	options := &redis.Options{
+		Addr:	  host + ":" + port,
+		Password: password, // no password set
+		DB:		  0,  // use default DB
+	}
 	if (db_name != "") {
-		redis_url += "/" + db_name
+		options.DB = ally_strings.StringToNumber(db_name)
 	}
-	opt, err := redis.ParseURL(redis_url)
-	if err != nil {
-		panic(err)
+	if (user != "") {
+		options.Username = user
+	}
+	if (tls_enabled == "true") {
+		options.TLSConfig = &tls.Config{
+			MinVersion: tls.VersionTLS12,
+			ServerName: host,
+		}
 	}
 
-	client := redis.NewClient(opt)
+	client := redis.NewClient(options)
 
-	// client := redis.NewClient(&redis.Options{
-	// 	Addr:	  host + ":" + port,
-	// 	Password: password, // no password set
-	// 	DB:		  ally_strings.StringToNumber(db_name),  // use default DB
-	// })
 	return client
 }
 

@@ -295,3 +295,9 @@ func GetUserID(w http.ResponseWriter, r *http.Request) int {
 	id := sessions.GetUserIDFromSession(session)
 	return id
 }
+
+func GetUserBySession(w http.ResponseWriter, r *http.Request) users.User {
+	session := GetCookie(w, r, "ally-admin-session")
+	user := sessions.GetUserFromSession(session)
+	return user
+}

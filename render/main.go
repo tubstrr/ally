@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/tubstrr/ally/database/users"
 	"github.com/tubstrr/ally/network"
 )
 
@@ -103,8 +102,8 @@ func Parse(w http.ResponseWriter, r *http.Request, file string) string {
 	content = strings.ReplaceAll(string(root), "{{ ALLY_PAGE }}", content)
 
 	if (network.IsUserLoggedIn(w, r)) {
-		userID := network.GetUserID(w, r)
-		user := users.GetUserByID(userID)
+		user := network.GetUserBySession(w, r)
+		// user := users.GetUserBySession(session)
 		content = strings.ReplaceAll(content, "{{ ALLY_USERNAME }}", user.Username)
 	} 
 

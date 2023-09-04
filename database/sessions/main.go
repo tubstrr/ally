@@ -179,6 +179,23 @@ func GetUserIDFromSession(session string) int {
 }
 
 func GetUserFromSession(session string) users.User {
+	// First check if the user is in redis
+	redisSession, err := ally_redis.GetKey("session-" + session)
+	if (err != nil) {
+		fmt.Println(err)
+	}
+
+	if (redisSession != "") {
+		var redisSessionObject Session
+		err := json.Unmarshal([]byte(redisSession), &redisSessionObject)
+		if (err != nil) {
+			fmt.Println(err)
+		}
+
+		user := users.GetUserByID(redisSessionObject.UserID)
+		return user
+	}
+
 	// Check if the session token is valid
 	db := database.OpenConnection()
 

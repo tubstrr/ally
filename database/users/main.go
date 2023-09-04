@@ -1,9 +1,14 @@
 package users
 
 import (
+	"encoding/json"
+	"fmt"
+	"strconv"
+
 	_ "github.com/lib/pq" // postgres driver
 
 	"github.com/tubstrr/ally/database"
+	ally_redis "github.com/tubstrr/ally/database/redis"
 	"github.com/tubstrr/ally/errors"
 )
 
@@ -189,6 +194,23 @@ func GetUserByUsername(username string) User {
 }
 
 func GetUserByID(id int) User {
+	// First check if the user is in redis
+	redisUser, err := ally_redis.GetKey("user-" + strconv.Itoa(id))
+	if (err != nil) {
+		fmt.Println(err)
+	}
+
+	if (redisUser != "") {
+		var redisUserObject User
+		err := json.Unmarshal([]byte(redisUser), &redisUserObject)
+		if (err != nil) {
+			fmt.Println(err)
+		}
+
+		fmt.Println("Got user from Redis")
+		return redisUserObject
+	}
+
 	// Get the user
 	db := database.OpenConnection()
 
@@ -221,6 +243,12 @@ func GetUserByID(id int) User {
 		Role: role_idQuery,
 	}
 
+	// Set the user in redis
+	userJson, err := json.Marshal(user)
+	if (err != nil) {
+		fmt.Println(err)
+	}
+	ally_redis.SetKey("user-" + strconv.Itoa(id), string(userJson))
 
 	return user
 }
