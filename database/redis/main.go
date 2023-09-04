@@ -5,20 +5,28 @@ import (
 
 	"github.com/redis/go-redis/v9"
 	"github.com/tubstrr/ally/environment"
-	ally_strings "github.com/tubstrr/ally/utilities/strings"
 )
 
 func MakeClient() *redis.Client {
 	host := environment.Get_environment_variable("ALLY_REDIS_HOST", "redis")
 	port := environment.Get_environment_variable("ALLY_REDIS_PORT", "6379")
-	db_name := environment.Get_environment_variable("ALLY_REDIS_NAME", "0")
+	db_name := environment.Get_environment_variable("ALLY_REDIS_DB_NAME", "")
+	user := environment.Get_environment_variable("ALLY_REDIS_USERNAME", "default")
 	password := environment.Get_environment_variable("ALLY_REDIS_PASSWORD", "")
 
-	client := redis.NewClient(&redis.Options{
-		Addr:	  host + ":" + port,
-		Password: password, // no password set
-		DB:		  ally_strings.StringToNumber(db_name),  // use default DB
-	})
+	redis_url := "redis://" + user + ":" + password + "@" + host + ":" + port + "/" + db_name
+	opt, err := redis.ParseURL(redis_url)
+	if err != nil {
+		panic(err)
+	}
+
+	client := redis.NewClient(opt)
+
+	// client := redis.NewClient(&redis.Options{
+	// 	Addr:	  host + ":" + port,
+	// 	Password: password, // no password set
+	// 	DB:		  ally_strings.StringToNumber(db_name),  // use default DB
+	// })
 	return client
 }
 
