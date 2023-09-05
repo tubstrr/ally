@@ -6,8 +6,10 @@ import (
 
 	_ "github.com/lib/pq" // postgres driver
 
+	ally_redis "github.com/tubstrr/ally/database/redis"
 	"github.com/tubstrr/ally/environment"
 	"github.com/tubstrr/ally/errors"
+	ally_global "github.com/tubstrr/ally/global"
 )
 
 var db *sql.DB
@@ -16,13 +18,17 @@ var err error
 func CheckDatabase() {
 	fmt.Println("Checking database")
 
-	// Open a connection to the database
-	db = OpenConnection()
+	db := ally_global.Database
+	if (db == nil) {
+		// Open a connection to the database
+		db = OpenConnection()
+	}
 
 	tables_needed := []string{
 		"ally_users", 
 		"ally_user_roles",
 		"ally_user_sessions",
+		"ally_site_options",
 	}
 	check_query := MakeCheckQuery(tables_needed)
 
@@ -44,9 +50,6 @@ func CheckDatabase() {
 			CreateDatabaseTables(tables_needed)
 		}
 	}
-
-	// Close the connection
-	defer CloseConnection(db)	
 }
 
 func OpenConnection() *sql.DB {
@@ -56,11 +59,18 @@ func OpenConnection() *sql.DB {
 	if err != nil { panic(err) }
 	if err = db.Ping(); err != nil { panic(err) }
 
+	if (ally_global.Database == nil) {
+		ally_global.Database = db
+	}
+
 	return db
 }
 
 func CloseConnection(db *sql.DB) {
+	fmt.Println("Closing database connection")
 	db.Close()
+	ally_global.Database.Close()
+	ally_global.Database = nil
 }
 
 // String functions
@@ -116,6 +126,11 @@ func CreateDatabaseTables(tables []string) {
 			created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 			CONSTRAINT user_session_unique UNIQUE (user_id) 
 		`,
+		"ally_site_options": `
+			id SERIAL PRIMARY KEY,
+			option VARCHAR(50) UNIQUE NOT NULL,
+			value VARCHAR(300) NOT NULL
+		`,
 	}
 	tables_preload := map[string]string {
 		"ally_user_roles": `
@@ -126,6 +141,43 @@ func CreateDatabaseTables(tables []string) {
 			INSERT INTO ally_user_roles (role) VALUES ('user')
 				ON CONFLICT DO NOTHING;
 		`,
+		"ally_site_options": `
+			INSERT INTO ally_site_options (option, value) VALUES ('site_name', 'Ally')
+				ON CONFLICT DO NOTHING;
+			INSERT INTO ally_site_options (option, value) VALUES ('site_description', 'A simple CMS')
+				ON CONFLICT DO NOTHING;
+			INSERT INTO ally_site_options (option, value) VALUES ('site_theme', 'default')
+				ON CONFLICT DO NOTHING;
+		`,
+	}
+
+	tables_redis_preload := map[string]map[string]string {	
+		"ally_user_roles": map[string]string {
+			"role-1": "superadmin",
+			"role-2": "admin",
+			"role-3": "user",
+		},
+		"ally_site_options": map[string]string {
+			"ally_option_site_name": "Ally",
+			"ally_option_site_url": "",
+			"ally_option_site_description": "A simple CMS",
+			"ally_option_site_theme": "default",
+		},
+	}
+
+	if (environment.Get_environment_variable("ALLY_ENVIRONMENT", "development") == "development") {
+		port := environment.Get_environment_variable("ALLY_PORT", "3000")
+		tables_preload["ally_site_options"] = `
+			INSERT INTO ally_site_options (option, value) VALUES ('site_name', 'Ally')
+				ON CONFLICT DO NOTHING;
+			INSERT INTO ally_site_options (option, value) VALUES ('site_description', 'A simple CMS')
+				ON CONFLICT DO NOTHING;
+			INSERT INTO ally_site_options (option, value) VALUES ('site_theme', 'default')
+				ON CONFLICT DO NOTHING;
+			INSERT INTO ally_site_options (option, value) VALUES ('site_url', 'http://localhost:` + port + `')
+				ON CONFLICT DO NOTHING;
+		`
+		tables_redis_preload["ally_site_options"]["ally_option_site_url"] = "http://localhost:" + port
 	}
 
 	// Loop through the tables and create them if they don't exist
@@ -138,6 +190,13 @@ func CreateDatabaseTables(tables []string) {
 			fmt.Println("Preloading table " + table)
 			_, e := db.Exec(tables_preload[table])
 			errors.CheckError(e)
+		}
+
+		if (tables_redis_preload[table] != nil) {
+			fmt.Println("Preloading redis table " + table)
+			for key, value := range tables_redis_preload[table] {
+				ally_redis.SetKey(key, value)
+			}
 		}
 	}
 }

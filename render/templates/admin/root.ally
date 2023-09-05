@@ -3,10 +3,12 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Welcome To Ally</title>
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/gh/vanjs-org/mini-van/public/mini-van-0.3.9.nomodule.min.js"></script>
+    <title>{{ ALLY_SEO_TITLE }}</title>
+    <meta name="description" content="{{ ALLY_SEO_DESCRIPTION }}" />
+    <script type="text/javascript">{let t,e,n,l,o;n=(e=Object).getPrototypeOf,o={vanWithDoc:l=l=>{let o={},d={add:(e,...n)=>(e.append(...n.flat(1/0).filter(e=>e!=t)),e),tags:new Proxy((r,...w)=>{let[i,...u]=w[0]?.constructor===e?w:[{},...w],a=l.createElement(r);for(let[l,d]of e.entries(i)){let w=o=>o?e.getOwnPropertyDescriptor(o,l)??w(n(o)):t,i=r+","+l,u=o[i]??(o[i]=w(n(a))?.set??0);u?u.call(a,d):a.setAttribute(l,d)}return d.add(a,...u)},{get:(t,e)=>t.bind(null,e)}),html:(...t)=>"<!DOCTYPE html>"+d.tags.html(...t).outerHTML};return d},...l("undefined"!=typeof window?window.document:null)},window.van=o;}</script>
   </head>
   <body>
+  {{ ALLY_ACTION_BAR }}
   {{ ALLY_PAGE }}
   </body>
 </html>

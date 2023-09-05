@@ -9,6 +9,15 @@ import (
 	ally_strings "github.com/tubstrr/ally/utilities/strings"
 )
 
+func CheckRedisDatabase() {
+	// Check if the database exists
+	client := MakeClient()
+	_, err := client.Ping(context.Background()).Result()
+	if err != nil {
+		panic(err)
+	}
+}
+
 func MakeClient() *redis.Client {
 	host := environment.Get_environment_variable("ALLY_REDIS_HOST", "redis")
 	port := environment.Get_environment_variable("ALLY_REDIS_PORT", "6379")

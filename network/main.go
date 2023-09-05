@@ -9,8 +9,10 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/tubstrr/ally/database"
 	"github.com/tubstrr/ally/database/sessions"
 	"github.com/tubstrr/ally/database/users"
+	ally_global "github.com/tubstrr/ally/global"
 	"github.com/tubstrr/ally/utilities/validation"
 )
 
@@ -34,11 +36,18 @@ type Cookie struct {
 }
 
 // Utility functions
-func Redirect(w http.ResponseWriter, r *http.Request, url string) {
+func Redirect(url string) {
+	// Get the global variables
+	w := ally_global.W
+	r := ally_global.R
+
 	http.Redirect(w, r, url, http.StatusSeeOther)
 }
 
-func FourOhFour(w http.ResponseWriter, r *http.Request) {
+func FourOhFour() {
+	// Get the global variables
+	w := ally_global.W
+
 	w.WriteHeader(http.StatusNotFound)
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Header().Set("Cache-Control", "public, s-maxage=604800")
@@ -47,48 +56,58 @@ func FourOhFour(w http.ResponseWriter, r *http.Request) {
 }
 
 // Cookie functions
-func SetCookie(w http.ResponseWriter, r *http.Request, name string, value string) {
-    // Initialize a new cookie containing the string "Hello world!" and some
-    // non-default attributes.
-    cookie := http.Cookie{
-        Name:     name,
-        Value:    value,
-        Path:     "/",
-        MaxAge:   3600,
-        HttpOnly: true,
-        // Secure:   true,
-        SameSite: http.SameSiteLaxMode,
-    }
+func SetCookie(name string, value string) {
+	// Get the global variables
+	w := ally_global.W
+	
+	// Initialize a new cookie containing the string "Hello world!" and some
+	// non-default attributes.
+	cookie := http.Cookie{
+			Name:     name,
+			Value:    value,
+			Path:     "/",
+			MaxAge:   3600,
+			HttpOnly: true,
+			// Secure:   true,
+			SameSite: http.SameSiteLaxMode,
+	}
 
-    // Use the http.SetCookie() function to send the cookie to the client.
-    // Behind the scenes this adds a `Set-Cookie` header to the response
-    // containing the necessary cookie data.
-    http.SetCookie(w, &cookie)
+	// Use the http.SetCookie() function to send the cookie to the client.
+	// Behind the scenes this adds a `Set-Cookie` header to the response
+	// containing the necessary cookie data.
+	http.SetCookie(w, &cookie)
 }
 
-func GetCookie(w http.ResponseWriter, r *http.Request, name string) string {
-    // Retrieve the cookie from the request using its name (which in our case is
-    // "exampleCookie"). If no matching cookie is found, this will return a
-    // http.ErrNoCookie error. We check for this, and return a 400 Bad Request
-    // response to the client.
-    cookie, err := r.Cookie(name)
-    
-		if err != nil {
-        switch {
-        	case errors.Is(err, http.ErrNoCookie):
-						return ""
-            // http.Error(w, "cookie not found", http.StatusBadRequest)
-        	default:
-            log.Println(err)
-            http.Error(w, "server error", http.StatusInternalServerError)
-        }
-    }
+func GetCookie(name string) string {
+	// Get the global variables
+	w := ally_global.W
+	r := ally_global.R
 
-    // Echo out the cookie value in the response body.
-		return cookie.Value
+	// Retrieve the cookie from the request using its name (which in our case is
+	// "exampleCookie"). If no matching cookie is found, this will return a
+	// http.ErrNoCookie error. We check for this, and return a 400 Bad Request
+	// response to the client.
+	cookie, err := r.Cookie(name)
+	
+	if err != nil {
+			switch {
+				case errors.Is(err, http.ErrNoCookie):
+					return ""
+					// http.Error(w, "cookie not found", http.StatusBadRequest)
+				default:
+					log.Println(err)
+					http.Error(w, "server error", http.StatusInternalServerError)
+			}
+	}
+
+	// Echo out the cookie value in the response body.
+	return cookie.Value
 }
 
-func DeleteCookie(w http.ResponseWriter, r *http.Request, name string) {
+func DeleteCookie(name string) {
+	// Get the global variables
+	w := ally_global.W
+
 		// Set the cookie value to empty, and set the max age to -1, i.e. delete it
 		// immediately.
 		cookie := http.Cookie{
@@ -106,6 +125,16 @@ func DeleteCookie(w http.ResponseWriter, r *http.Request, name string) {
 
 // Form functions
 func Authorization(w http.ResponseWriter, r *http.Request) {
+	// Set gloal variables
+	ally_global.W = w
+	ally_global.R = r
+
+	// Open the database connection
+	if (ally_global.Database == nil) {
+		ally_global.Database = database.OpenConnection()
+	}
+
+	// Parse the form
 	r.ParseForm()
 
 	// Get the form data
@@ -125,7 +154,7 @@ func Authorization(w http.ResponseWriter, r *http.Request) {
 		
 		// Redirect with error
 		redirect_url := "/ally-admin/login?error=missing_fields&missing_fields=" + missing_fields
-		Redirect(w, r, redirect_url)
+		Redirect(redirect_url)
 		return
 	}
 
@@ -134,7 +163,7 @@ func Authorization(w http.ResponseWriter, r *http.Request) {
 	if (user.Username == "") {
 		// Redirect with error
 		redirect_url := "/ally-admin/login?error=invalid_username"
-		Redirect(w, r, redirect_url)
+		Redirect(redirect_url)
 		return
 	}
 
@@ -142,7 +171,7 @@ func Authorization(w http.ResponseWriter, r *http.Request) {
 	if (!validation.VerifyPassword(user.Password, password)) {
 		// Redirect with error
 		redirect_url := "/ally-admin/login?error=invalid_password"
-		Redirect(w, r, redirect_url)
+		Redirect(redirect_url)
 		return
 	}
 
@@ -153,19 +182,30 @@ func Authorization(w http.ResponseWriter, r *http.Request) {
 	// Set the cookie
 	sessions.SetSessionToken(user.Id, session)
 
-	SetCookie(w, r, "ally-admin-session", session)
-	Redirect(w, r, "/ally-admin")
+	SetCookie("ally-user-session", session)
+
+	Redirect("/ally-admin")
 }
 
 func Logout(w http.ResponseWriter, r *http.Request) {
+	// Set gloal variables
+	ally_global.W = w
+	ally_global.R = r
+
 	// Handle form submission here
-	session := GetCookie(w, r, "ally-admin-session")
+	session := GetCookie("ally-user-session")
 	sessions.DeleteSessionToken(session)
-	DeleteCookie(w, r, "ally-admin-session")
-	Redirect(w, r, "/ally-admin/login")
+	DeleteCookie("ally-user-session")
+
+	Redirect("/ally-admin/login")
 }
 
 func CreateAccount(w http.ResponseWriter, r *http.Request) {
+	// Set gloal variables
+	ally_global.W = w
+	ally_global.R = r
+
+	// Parse the form
 	r.ParseForm()
 
 	// Get the form data
@@ -181,7 +221,7 @@ func CreateAccount(w http.ResponseWriter, r *http.Request) {
 		role = 2
 	}
 		
-
+	// Set the default redirect
 	if (redirect == "") {
 		redirect = "/ally-admin"
 	}
@@ -200,7 +240,7 @@ func CreateAccount(w http.ResponseWriter, r *http.Request) {
 
 		// Redirect with error
 		redirect_url := redirect + "?error=missing_fields&missing_fields=" + missing_fields
-		Redirect(w, r, redirect_url)
+		Redirect(redirect_url)
 		return
 	}
 	
@@ -208,7 +248,7 @@ func CreateAccount(w http.ResponseWriter, r *http.Request) {
 	if (password != confirm_password) {
 		// Redirect with error
 		redirect_url := redirect + "?error=passwords_do_not_match"
-		Redirect(w, r, redirect_url)
+		Redirect(redirect_url)
 		return
 	}
 
@@ -216,7 +256,7 @@ func CreateAccount(w http.ResponseWriter, r *http.Request) {
 	if (!validation.ValidateEmail(email)) {
 		// Redirect with error
 		redirect_url := redirect + "?error=invalid_email"
-		Redirect(w, r, redirect_url)
+		Redirect(redirect_url)
 	}
 
 	// Convert username
@@ -230,7 +270,7 @@ func CreateAccount(w http.ResponseWriter, r *http.Request) {
 	if (users.IsUserTableEmpty()) {
 		role = 1
 		users.CreateUser(username, email, password, role)
-		Redirect(w, r, "/ally-admin/forms/auth?username=" + username + "&password=" + r.FormValue("password"))
+		Redirect("/ally-admin/forms/auth?username=" + username + "&password=" + r.FormValue("password"))
 		return
 	}
 	
@@ -238,7 +278,7 @@ func CreateAccount(w http.ResponseWriter, r *http.Request) {
 	if (!users.IsValidUsername(username)) {
 		// Redirect with error
 		redirect_url := redirect + "?error=username_taken"
-		Redirect(w, r, redirect_url)
+		Redirect(redirect_url)
 		return
 	}
 
@@ -246,36 +286,41 @@ func CreateAccount(w http.ResponseWriter, r *http.Request) {
 	if (!users.IsValidEmail(email)) {
 		// Redirect with error
 		redirect_url := redirect + "?error=email_taken"
-		Redirect(w, r, redirect_url)
+		Redirect(redirect_url)
 		return
 	}
 
 	// If we get here, the user is valid
 	// But we need to check if the user has permission to create an account
-	user := sessions.GetUserFromSession(GetCookie(w, r, "ally-admin-session"))
+	user := sessions.GetUserFromSession(GetCookie("ally-user-session"))
 
 	if (user.Role <= 2 && user.Role != 0) {
 		users.CreateUser(username, email, password, role)
-		Redirect(w, r, redirect + "?success=account_created")
+		Redirect(redirect + "?success=account_created")
 	} else {
-		Redirect(w, r, redirect + "?error=permission_denied")
+		Redirect(redirect + "?error=permission_denied")
 	}
-
 }
 
-func RedirectIfUserLoggedIn(w http.ResponseWriter, r *http.Request) {
+func RedirectIfUserLoggedIn() {
 	// Check if the user is logged in
-	loggedIn := IsUserLoggedIn(w, r)
+	loggedIn := IsUserLoggedIn()
 	// If the user is logged in, redirect them to the dashboard
 	if (loggedIn) {
-		Redirect(w, r, "/ally-admin")
+		Redirect("/ally-admin")
 	}
 }
 
-func IsUserLoggedIn(w http.ResponseWriter, r *http.Request) bool {
+func IsUserLoggedIn() bool {
 	loggedIn := false
-	// First get the session cookie
-	session := GetCookie(w, r, "ally-admin-session")
+	// First check the global variable
+	if (ally_global.ActiveUser.LoggedIn) {
+		loggedIn = true
+		return loggedIn
+	}
+
+	// Then get the session cookie
+	session := GetCookie("ally-user-session")
 	// Then check if the session cookie is empty
 	if (session == "") {
 		loggedIn = false
@@ -284,20 +329,23 @@ func IsUserLoggedIn(w http.ResponseWriter, r *http.Request) bool {
 		loggedIn = sessions.CheckSessionToken(session)
 		if (!loggedIn) {
 			// If the session cookie is invalid, delete it
-			DeleteCookie(w, r, "ally-admin-session")
+			DeleteCookie("ally-user-session")
 		}
 	}
+
+	// Set the global variable
+	ally_global.ActiveUser.LoggedIn = loggedIn
 	return loggedIn
 }
 
-func GetUserID(w http.ResponseWriter, r *http.Request) int {
-	session := GetCookie(w, r, "ally-admin-session")
+func GetUserID() int {
+	session := GetCookie("ally-user-session")
 	id := sessions.GetUserIDFromSession(session)
 	return id
 }
 
-func GetUserBySession(w http.ResponseWriter, r *http.Request) users.User {
-	session := GetCookie(w, r, "ally-admin-session")
+func GetUserBySession() users.User {
+	session := GetCookie("ally-user-session")
 	user := sessions.GetUserFromSession(session)
 	return user
 }

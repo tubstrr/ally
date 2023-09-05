@@ -10,6 +10,7 @@ import (
 	"github.com/tubstrr/ally/database"
 	ally_redis "github.com/tubstrr/ally/database/redis"
 	"github.com/tubstrr/ally/errors"
+	ally_global "github.com/tubstrr/ally/global"
 )
 
 type User struct {
@@ -42,7 +43,7 @@ func IsUserTableEmpty() bool {
 		}
 	}
 
-	defer database.CloseConnection(db)
+	// defer database.CloseConnection(db)
 
 	return isTableEmpty
 }
@@ -81,7 +82,7 @@ func CreateUser(username string, email string, password string, role int) int {
 		errors.CheckError(e)
 	}
 
-	defer database.CloseConnection(db)
+	// defer database.CloseConnection(db)
 
 	return id
 }
@@ -116,7 +117,7 @@ func IsValidUsername(username string) bool {
 		isValid = true
 	}
 
-	defer database.CloseConnection(db)
+	// defer database.CloseConnection(db)
 
 	return isValid
 }
@@ -151,14 +152,14 @@ func IsValidEmail(email string) bool {
 		isValid = true
 	}
 
-	defer database.CloseConnection(db)
+	// defer database.CloseConnection(db)
 
 	return isValid
 }
 
 func GetUserByUsername(username string) User {
 	// Get the user
-	db := database.OpenConnection()
+	db := ally_global.Database
 
 	userQuery, e := db.Query(`
 		SELECT * FROM ally_users
@@ -179,8 +180,6 @@ func GetUserByUsername(username string) User {
 		e = userQuery.Scan(&id, &usernameQuery, &passwordQuery, &emailQuery, &role_idQuery, &created_atQuery, &updated_atQuery)
 		errors.CheckError(e)
 	}
-
-	defer database.CloseConnection(db)
 
 	user := User{
 		Id: id,
@@ -234,7 +233,7 @@ func GetUserByID(id int) User {
 		errors.CheckError(e)
 	}
 
-	defer database.CloseConnection(db)
+	// defer database.CloseConnection(db)
 
 	user := User{
 		Id: idQuery,

@@ -1,0 +1,3 @@
+<section class="action-bar">
+  <a href="{{ ALLY_SITE_URL }}">{{ ALLY_SITE_NAME }}</a>
+</section>

@@ -9,6 +9,7 @@ import (
 	ally_redis "github.com/tubstrr/ally/database/redis"
 	"github.com/tubstrr/ally/database/users"
 	"github.com/tubstrr/ally/errors"
+	ally_global "github.com/tubstrr/ally/global"
 )
 
 type Session struct {
@@ -20,9 +21,11 @@ type Session struct {
 
 func SetSessionToken(UserID int, SessionID string) {
 	// Check if the user has a session token in the DB
-
-	db := database.OpenConnection()
-
+	db := ally_global.Database
+	if (db == nil) {
+		// Open a connection to the database
+		db = database.OpenConnection()
+	}
 	// Check if the user has a session token
 
 	
@@ -50,7 +53,7 @@ func SetSessionToken(UserID int, SessionID string) {
 	// Set the session token in redis
 	ally_redis.SetKey("session-" + SessionID, string(sessionJSON))
 	
-	defer database.CloseConnection(db)
+	// defer database.CloseConnection(db)
 }
 
 func CheckSessionToken(session string) bool {
@@ -112,7 +115,7 @@ func CheckSessionToken(session string) bool {
 		errors.CheckError(e)
 	}
 
-	defer database.CloseConnection(db)
+	// defer database.CloseConnection(db)
 
 	// if session is older than 10 seconds, delete it
 	// convert created_at to time
@@ -173,7 +176,7 @@ func GetUserIDFromSession(session string) int {
 		errors.CheckError(e)
 	}
 
-	defer database.CloseConnection(db)
+	// defer database.CloseConnection(db)
 
 	return user_id
 }
@@ -217,14 +220,19 @@ func GetUserFromSession(session string) users.User {
 		errors.CheckError(e)
 	}
 
-	defer database.CloseConnection(db)
+	// defer database.CloseConnection(db)
 
 	return users.GetUserByID(user_id)
 }
 
 func DeleteSessionToken(session string) {
 	// Delete the session token
-	db := database.OpenConnection()
+	db := ally_global.Database
+
+	if (db == nil) {
+		// Open a connection to the database
+		db = database.OpenConnection()
+	}
 
 	// Check if the user has a session token
 	_, e := db.Exec(`
@@ -233,5 +241,11 @@ func DeleteSessionToken(session string) {
 	`, session)
 	errors.CheckError(e)
 
-	defer database.CloseConnection(db)
+	// Delete the session token from redis
+	ally_redis.DeleteKey("session-" + session)
+
+	// Set the global variables
+	ally_global.ActiveUser.LoggedIn = false
+
+	// defer database.CloseConnection(db)
 }

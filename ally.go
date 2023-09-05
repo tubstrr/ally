@@ -8,6 +8,8 @@ import (
 	"github.com/tubstrr/ally/database"
 	"github.com/tubstrr/ally/database/users"
 	"github.com/tubstrr/ally/environment"
+	ally_global "github.com/tubstrr/ally/global"
+	"github.com/tubstrr/ally/global/lifecycle"
 	"github.com/tubstrr/ally/network"
 	"github.com/tubstrr/ally/render"
 )
@@ -60,41 +62,54 @@ func Serve(port string) {
 }
 
 func Ally(w http.ResponseWriter, r *http.Request) {
+	// Set the global variables
+	ally_global.W = w
+	ally_global.R = r
+
 	path := r.URL.Path
 	path = strings.TrimPrefix(path, "/")
 	path = strings.TrimSuffix(path, "/")
 	split := strings.Split(path, "/")
 	if (split[0] == "ally-admin") {
 		fmt.Println("You shouldn't be here")
-		network.FourOhFour(w, r)
+		network.FourOhFour()
 		return
 	}
 	
-	render.HtmlRender(w, r, "/front-end/index.html")
+	defer ally_global.ResetGlobalVariables()
+	render.HtmlRender("/front-end/index.html")
 }
 
 func Admin(w http.ResponseWriter, r *http.Request) {
-	// If user is not logged in, redirect to login page
-	loggedIn := network.IsUserLoggedIn(w,r)
-	if (!loggedIn) {
-		network.Redirect(w, r, "/ally-admin/login")
-		return
+	// Set the global variables
+	lifecycle.Init(w, r)
+	defer lifecycle.End()
+	
+	// If user is logged in, render admin
+	// If not, redirect to login
+	if (ally_global.ActiveUser.LoggedIn) {
+		render.DynamicRender("/admin/pages/index.ally", false)
+	} else {
+		network.Redirect("/ally-admin/login")
 	}
-
-	render.DynamicRender(w, r, "/admin/pages/index.ally", false)
 }
 
 func AdminLogin(w http.ResponseWriter, r *http.Request) {
-	// If user is logged in, redirect to admin
-	network.RedirectIfUserLoggedIn(w, r)
+	// Set the global variables
+	lifecycle.Init(w, r)
+	defer lifecycle.End()
 
-	render.DynamicRender(w, r, "/admin/pages/login.ally", false)
+	// If user is logged in, redirect to admin
+	network.RedirectIfUserLoggedIn()
+
+	render.AdminRender("/admin/pages/login.ally")
 }
 
 func AdminCreateAccount(w http.ResponseWriter, r *http.Request) {
 	if (users.IsUserTableEmpty()) {
-		render.DynamicRender(w, r, "/admin/pages/create-account.ally", false)
+		defer ally_global.ResetGlobalVariables()
+		render.DynamicRender("/admin/pages/create-account.ally", false)
 	} else {
-		network.Redirect(w, r, "/ally-admin/login")
+		network.Redirect("/ally-admin/login")
 	}
 }
